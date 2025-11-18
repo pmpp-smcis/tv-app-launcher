@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 // Configure your JSON URL here
-const APPS_JSON_URL = "https://gitlab.com/vlb1/apps/-/raw/main/apps.json";
+const APPS_JSON_URL = "https://github.com/pmpp-smcis/apoio/raw/refs/heads/main/apps.json";
 const LOCAL_FALLBACK_JSON = "/apps-example.json";
 
 const Index = () => {

@@ -78,13 +78,16 @@ const Index = () => {
   };
 
   const handleInstall = useCallback(async (app: AppItem) => {
+    console.log('handleInstall chamado', { isNative: Capacitor.isNativePlatform(), app });
+    
     if (!Capacitor.isNativePlatform()) {
-      // Fallback for web
+      console.log('Não é plataforma nativa, abrindo navegador');
       window.open(app.apkUrl, "_blank");
       return;
     }
 
     try {
+      console.log('Iniciando download nativo...');
       toast({
         title: "Baixando...",
         description: `Iniciando download de ${app.name}`,
@@ -92,27 +95,37 @@ const Index = () => {
 
       // Download APK usando HTTP nativo do Capacitor
       const fileName = `${app.packageName}.apk`;
+      console.log('Baixando APK:', { url: app.apkUrl, fileName });
+      
       const result = await Http.downloadFile({
         url: app.apkUrl,
         filePath: fileName,
         fileDirectory: Directory.Cache,
       });
 
+      console.log('Download concluído:', result);
+      
       toast({
         title: "Download concluído",
         description: "Abrindo instalador...",
       });
 
       // Open APK with native installer
+      console.log('Abrindo instalador:', result.path);
       await FileOpener.open({
         filePath: result.path!,
         contentType: 'application/vnd.android.package-archive',
       });
+      
+      console.log('Instalador aberto com sucesso');
     } catch (error) {
-      console.error('Install error:', error);
+      console.error('Erro detalhado na instalação:', error);
+      console.error('Tipo do erro:', typeof error);
+      console.error('Erro stringificado:', JSON.stringify(error, null, 2));
+      
       toast({
         title: "Erro",
-        description: "Falha ao baixar/instalar o app",
+        description: `Falha ao baixar/instalar: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     }

@@ -89,30 +89,46 @@ const Index = () => {
       setLoading(true);
       setError(null);
       
-      // Try to fetch from remote URL first
-      let response = await fetch(APPS_JSON_URL);
+      console.log('🔵 Buscando apps de:', APPS_JSON_URL);
       
-      // If remote fails, try local fallback
-      if (!response.ok) {
-        console.log("Remote fetch failed, trying local fallback...");
-        response = await fetch(LOCAL_FALLBACK_JSON);
+      // Use CapacitorHttp for native platform, fetch for web
+      if (Capacitor.isNativePlatform()) {
+        const response = await CapacitorHttp.get({
+          url: APPS_JSON_URL,
+          responseType: 'json',
+          connectTimeout: 10000,
+          readTimeout: 10000,
+        });
         
-        if (!response.ok) {
-          throw new Error("Falha ao carregar lista de apps");
+        console.log('🔵 Response status:', response.status);
+        
+        if (response.status === 200) {
+          const data = response.data;
+          console.log('🔵 Apps carregados:', data.apps?.length || 0);
+          setApps(data.apps || []);
+          return;
         }
         
-        toast({
-          title: "Modo Offline",
-          description: "Usando lista de apps local",
-        });
+        throw new Error(`HTTP ${response.status}`);
+      } else {
+        // Web fallback using fetch
+        const response = await fetch(APPS_JSON_URL);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setApps(data.apps || []);
       }
-      
-      const data = await response.json();
-      setApps(data.apps || []);
     } catch (err) {
-      // Last resort: try local fallback if not already tried
+      console.error('❌ Erro ao buscar apps:', err);
+      
+      // Try local fallback
       try {
+        console.log('🔵 Tentando fallback local...');
         const fallbackResponse = await fetch(LOCAL_FALLBACK_JSON);
+        
         if (fallbackResponse.ok) {
           const data = await fallbackResponse.json();
           setApps(data.apps || []);
@@ -122,8 +138,8 @@ const Index = () => {
           });
           return;
         }
-      } catch {
-        // Ignore fallback errors
+      } catch (fallbackErr) {
+        console.error('❌ Fallback também falhou:', fallbackErr);
       }
       
       const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";

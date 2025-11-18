@@ -263,28 +263,28 @@ const Index = () => {
     try {
       console.log('🔵 Iniciando desinstalação:', app.name, app.packageName);
       
-      // Criar URL de desinstalação do Android
-      const uninstallUrl = `intent://details?id=${app.packageName}#Intent;scheme=package;action=android.settings.APPLICATION_DETAILS_SETTINGS;end`;
+      // Abrir diálogo de desinstalação nativo do Android
+      // Este é o método mais direto - abre o diálogo de desinstalação do sistema
+      const uninstallUrl = `intent:#Intent;action=android.intent.action.DELETE;scheme=package;package=${app.packageName};end`;
       
-      // Abrir a tela de detalhes do app onde o usuário pode desinstalar
       window.location.href = uninstallUrl;
       
       toast({
-        title: "Configurações do App",
-        description: `Desinstale ${app.name} através das configurações`,
-        duration: 5000,
+        title: "Confirmação necessária",
+        description: `Por segurança, o Android requer sua confirmação para desinstalar ${app.name}`,
+        duration: 4000,
       });
 
-      // Marcar como desinstalado após um delay maior
+      // Marcar como desinstalado após delay (usuário provavelmente confirmou)
       setTimeout(() => {
         markAsUninstalled(app.packageName);
-      }, 5000);
+      }, 4000);
       
     } catch (error) {
       console.error('❌ Erro ao desinstalar:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível abrir as configurações",
+        description: "Não foi possível iniciar a desinstalação",
         variant: "destructive",
       });
     }
@@ -295,58 +295,72 @@ const Index = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (apps.length === 0) return;
 
-      const cols = Math.floor(window.innerWidth / 320);
       const currentApp = apps[focusedIndex];
-      const hasUninstallButton = currentApp && installedApps.has(currentApp.packageName);
+      const isInstalled = currentApp && installedApps.has(currentApp.packageName);
       
       switch (e.key) {
         case "ArrowRight":
           e.preventDefault();
-          // Se não estamos no último card, ir para o próximo
+          // Mover para o próximo card
           if (focusedIndex < apps.length - 1) {
-            setFocusedIndex((prev) => prev + 1);
+            setFocusedIndex(focusedIndex + 1);
             setFocusedButton('install');
           }
           break;
+          
         case "ArrowLeft":
           e.preventDefault();
-          // Se não estamos no primeiro card, ir para o anterior
+          // Mover para o card anterior
           if (focusedIndex > 0) {
-            setFocusedIndex((prev) => prev - 1);
+            setFocusedIndex(focusedIndex - 1);
             setFocusedButton('install');
           }
           break;
+          
         case "ArrowDown":
           e.preventDefault();
-          // Se estamos no botão instalar e existe botão desinstalar, focar nele
-          if (focusedButton === 'install' && hasUninstallButton) {
+          // Se está no botão instalar e tem botão desinstalar, focar nele
+          if (focusedButton === 'install' && isInstalled) {
+            console.log('🔵 Movendo foco para botão desinstalar');
             setFocusedButton('uninstall');
-          } else if (focusedButton === 'install' || focusedButton === 'uninstall') {
-            // Mover para a linha de baixo
+          } else {
+            // Senão, mover para próxima linha (aproximadamente)
+            const cols = Math.floor(window.innerWidth / 320);
             const newIndex = Math.min(focusedIndex + cols, apps.length - 1);
-            setFocusedIndex(newIndex);
-            setFocusedButton('install');
+            if (newIndex !== focusedIndex) {
+              setFocusedIndex(newIndex);
+              setFocusedButton('install');
+            }
           }
           break;
+          
         case "ArrowUp":
           e.preventDefault();
-          // Se estamos no botão desinstalar, voltar para instalar
+          // Se está no botão desinstalar, voltar para instalar
           if (focusedButton === 'uninstall') {
+            console.log('🔵 Movendo foco para botão instalar');
             setFocusedButton('install');
           } else {
-            // Mover para a linha de cima
+            // Senão, mover para linha anterior (aproximadamente)
+            const cols = Math.floor(window.innerWidth / 320);
             const newIndex = Math.max(focusedIndex - cols, 0);
-            setFocusedIndex(newIndex);
-            setFocusedButton('install');
+            if (newIndex !== focusedIndex) {
+              setFocusedIndex(newIndex);
+              setFocusedButton('install');
+            }
           }
           break;
+          
         case "Enter":
           e.preventDefault();
           const app = apps[focusedIndex];
           if (app) {
-            if (focusedButton === 'uninstall' && hasUninstallButton) {
+            console.log('🔵 Enter pressionado - botão:', focusedButton);
+            if (focusedButton === 'uninstall' && isInstalled) {
+              console.log('🔵 Chamando handleUninstall');
               handleUninstall(app);
             } else {
+              console.log('🔵 Chamando handleInstall');
               handleInstall(app);
             }
           }

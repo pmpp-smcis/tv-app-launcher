@@ -4,10 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.lovable.lojaapps',
   appName: 'Loja de Apps',
   webDir: 'dist',
-  server: {
-    url: 'https://2a58af1a-d9ef-47b4-936e-da4cb53c5833.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
   android: {
     allowMixedContent: true
   }

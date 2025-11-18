@@ -6,7 +6,6 @@ import { Loader2 } from "lucide-react";
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { FileOpener } from '@capacitor-community/file-opener';
-import { Http } from '@capacitor/http';
 
 // Configure your JSON URL here
 const APPS_JSON_URL = "https://raw.githubusercontent.com/pmpp-smcis/apoio/refs/heads/main/apps.json";
@@ -90,12 +89,25 @@ const Index = () => {
         description: `Iniciando download de ${app.name}`,
       });
 
-      // Download APK usando HTTP nativo do Capacitor
+      // Download APK usando fetch e Filesystem
+      const response = await fetch(app.apkUrl);
+      const blob = await response.blob();
+      
+      // Convert blob to base64
+      const base64Data = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      
+      const base64 = base64Data.split(',')[1];
+      
+      // Save to device
       const fileName = `${app.packageName}.apk`;
-      const result = await Http.downloadFile({
-        url: app.apkUrl,
-        filePath: fileName,
-        fileDirectory: Directory.Cache,
+      const result = await Filesystem.writeFile({
+        path: fileName,
+        data: base64,
+        directory: Directory.Cache,
       });
 
       toast({
@@ -105,7 +117,7 @@ const Index = () => {
 
       // Open APK with native installer
       await FileOpener.open({
-        filePath: result.path!,
+        filePath: result.uri,
         contentType: 'application/vnd.android.package-archive',
       });
     } catch (error) {

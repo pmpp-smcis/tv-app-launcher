@@ -207,14 +207,26 @@ const Index = () => {
       const base64 = response.data;
       console.log('🔵 Dados recebidos, tamanho:', base64.length);
       
-      // Save to device
+      // Save to device - usar ExternalStorage para Downloads
       const fileName = `${app.packageName}.apk`;
       console.log('🔵 Salvando arquivo:', fileName);
+      
+      // Primeiro, tentar criar o diretório Download se não existir
+      try {
+        await Filesystem.mkdir({
+          path: 'Download',
+          directory: Directory.ExternalStorage,
+          recursive: true
+        });
+      } catch (e) {
+        console.log('🔵 Diretório Download já existe ou erro ao criar:', e);
+      }
       
       const result = await Filesystem.writeFile({
         path: `Download/${fileName}`,
         data: base64,
-        directory: Directory.Documents,
+        directory: Directory.ExternalStorage,
+        recursive: true
       });
 
       console.log('🔵 Arquivo salvo em:', result.uri);
